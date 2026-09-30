@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SecureAttend AI - Smart Attendance System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background: #0f172a; color: #f8fafc; min-height: 100vh; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #1e293b; }
+        .header h1 { font-size: 22px; font-weight: 700; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .badge { background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+        .stat-card { background: #1e293b; border: 1px solid #334155; padding: 14px; border-radius: 10px; }
+        .stat-card p { color: #94a3b8; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; }
+        .stat-card h3 { font-size: 16px; font-weight: 600; color: #f1f5f9; }
+        .main-content { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+        @media (max-width: 1200px) { .main-content { grid-template-columns: 1fr; } }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
+        .card-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: #cbd5e1; }
+        .video-container { width: 100%; border-radius: 8px; overflow: hidden; background: #020617; border: 1px solid #334155; }
+        .video-container img { width: 100%; height: auto; display: block; }
+        .table-wrapper { max-height: 460px; overflow-x: auto; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 11px; white-space: nowrap; }
+        th { background: #0f172a; color: #94a3b8; font-weight: 600; padding: 10px; position: sticky; top: 0; }
+        td { padding: 10px; border-bottom: 1px solid #334155; color: #e2e8f0; }
+        .status-tag { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .time-tag { color: #38bdf8; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>SecureAttend AI</h1>
+        <div class="badge" id="live-clock">Loading Time...</div>
+    </div>
+
+    <div class="stats-grid">
+        <!-- Timetable Card -->
+<div class="card" style="margin-bottom: 20px;">
+    <div class="card-title">📅 Today's Schedule</div>
+    <table id="timetable-table">
+        <thead>
+            <tr><th>Subject</th><th>Start Time</th><th>End Time</th></tr>
+        </thead>
+        <tbody id="timetable-body"></tbody>
+    </table>
+</div>
+
+<!-- Niche script tag mein ye function add karein -->
+<script>
+    function updateTimetable() {
+        fetch('/api/timetable').then(r => r.json()).then(slots => {
+            let body = document.getElementById('timetable-body');
+            body.innerHTML = '';
+            slots.forEach(s => {
+                body.innerHTML += `<tr><td>${s.subject}</td><td>${s.slot_start}</td><td>${s.slot_end}</td></tr>`;
+            });
+        });
+    }
+    // Dashboard update ke saath ise bhi chalayein
+    setInterval(updateTimetable, 60000); // 1 minute mein refresh
+    updateTimetable();
+</script>
+        <div class="stat-card"><p>Active Subject</p><h3 id="subject-name">Detecting...</h3></div>
+        <div class="stat-card"><p>Faculty In-Charge</p><h3 id="teacher-name">N/A</h3></div>
+        <div class="stat-card"><p>Today's Scanned</p><h3 id="total-count">0 Students</h3></div>
+    </div>
+
+    <div class="main-content">
+        <div class="card">
+            <div class="card-title">🎥 Live Face & Voice Recognition</div>
+            <div class="video-container">
+                <img src="/video_feed" alt="Camera Feed Loading...">
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">📋 Detailed Logs (Entry, Exit & Total Time)</div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Univ Roll</th>
+                            <th>Class Roll</th>
+                            <th>Name</th>
+                            <th>Father's Name</th>
+                            <th>Mother's Name</th>
+                            <th>Class/Sec</th>
+                            <th>Student Mob</th>
+                            <th>Father Mob</th>
+                            <th>In-Time (Aaya)</th>
+                            <th>Out-Time (Gaya)</th>
+                            <th>Total Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-table">
+                        <tr><td colspan="12" style="text-align: center; color: #64748b;">Scan face to mark attendance...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateDashboard() {
+            fetch('/api/status').then(r => r.json()).then(data => {
+                document.getElementById('subject-name').innerText = data.subject;
+                document.getElementById('teacher-name').innerText = data.teacher;
+                document.getElementById('live-clock').innerText = data.time;
+                
+                let logTable = document.getElementById('logs-table');
+                if (data.logs && data.logs.length > 0) {
+                    document.getElementById('total-count').innerText = data.logs.length + " Marked";
+                    logTable.innerHTML = '';
+                    data.logs.forEach(log => {
+                        logTable.innerHTML += `
+                            <tr>
+                                <td><b>${log.univ_roll}</b></td>
+                                <td><b style="color:#38bdf8;">${log.class_roll}</b></td>
+                                <td>${log.name}</td>
+                                <td>${log.father_name}</td>
+                                <td>${log.mother_name}</td>
+                                <td>${log.class_sec}</td>
+                                <td>${log.student_mobile}</td>
+                                <td>${log.father_mobile}</td>
+                                <td>${log.in_time}</td>
+                                <td>${log.out_time}</td>
+                                <td><span class="time-tag">${log.total_time}</span></td>
+                                <td><span class="status-tag">${log.status}</span></td>
+                            </tr>`;
+                    });
+                }
+            }).catch(err => console.log(err));
+        }
+        setInterval(updateDashboard, 2000);
+        updateDashboard();
+    </script>
+</body>
+</html>
